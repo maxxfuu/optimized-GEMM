@@ -1,0 +1,11 @@
+# CUDA linting via clangd on macOS (no real CUDA toolkit — headers only,
+# vendored under ~/.local/cuda from NVIDIA's redist archives).
+# -nocudalib: don't link libdevice (fixes "Cannot find libdevice for sm_52")
+# shim header: declares the legacy kernel-launch API clang expects on a Darwin host
+CompileFlags:
+  Add:
+    - --cuda-path=/Users/maxfu/.local/cuda
+    - --cuda-gpu-arch=sm_80
+    - -nocudalib
+    - --no-cuda-version-check
+    - -include/Users/maxfu/.local/cuda/include/clangd_cuda_shim.h
