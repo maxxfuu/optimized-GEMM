@@ -1,23 +1,48 @@
-#include <stdio.h>
 #include <cuda_runtime.h>
 
-__global__ void sgemm_naive(int M, int N, int K, float alpha, const float *A, const float *B, float beta, float *C) {
-  const int x = blockIdx.x * blockDim.x + threadIdx.x;
-  const int y = blockIdx.y * blockDim.y + threadIdx.y;
+// Naive Kernel 
+__global__ void sgemm_naive_kernel(float *A, float *B, float *C, int M, int N, int K, float alpha, float beta) {
+  int row = blockIdx.x * blockDim.x + threadIdx.x; 
+  int col = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if (x < M && y < N) {
-    float temp = 0.0;
-
-    for (int i = 0; i < K, i++) {
-      temp += A[x*K+i] * B[i*N+y];
+  if (row < M && col < N) {
+    float temp = 0.0f;
+    for (int i = 0; i < K; i++) {
+      temp += A[row * K + i] * B[i * N + col];
     }
 
-    C[x*N+y] = alpha * temp + beta * C[x*N+y];
+    C[row * N + col] = alpha * temp + beta * C[row * N + col];
   }
 }
 
 int main() {
-  dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32), 1);
+  int M, N, K = 32; 
+  
+  float *A = (float *)malloc(sizeof(float) * M * K);
+  float *B = (float *)malloc(sizeof(float) * K * N);
+  float *C = (float *)malloc(sizeof(float) * M * N);
+
+  for (int i = 0; i < M * K; i++) A[i] = (float)rand() / RAND_MAX; 
+  for (int i = 0; i < K * N; i++) B[i] = (float)rand() / RAND_MAX; 
+  for (int i = 0; i < M * N; i++) C[i] = 0.0f;
+
+  int alpha = 1.0f;
+  int beta = 0.0f;
+  
+  float *d_A, *d_B, *d_C;
+  cudaMalloc((void **)&d_A, sizeof(float) * M * K);
+  cudaMalloc((void **)&d_B, sizeof(float) * K * N);
+  cudaMalloc((void **)&d_C, sizeof(float) * M * N);
+
+  cudaMemcpy(d_A, A, sizeof(float) * M * K, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_B, B, sizeof(float) * K * N, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_C, C, sizeof(float) * M * N, cudaMemcpyHostToDevice);
+
+  dim3 blockDim(16, 16);
+  dim3 gridDim((M + blockDim.x - 1) / blockDim.x, (N + blockDim.y - 1) / blockDim.y);
+
+  sgemm_naive_kernel<<<gridDim, blockDim>>>(d_A, d_B, d_C, M, N, K, alpha, beta);
+  cudaDeviceSynchronize();
 
   return 0;
 }

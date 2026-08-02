@@ -1,0 +1,32 @@
+# Compiled executables on Linux have no extension (nvcc -o gemm), so instead
+# of listing artifact types, ignore everything and whitelist source files.
+# A new file type only gets tracked once it's added here -- that's the trade.
+*
+
+# directories must be un-ignored for the rules below to reach into them
+!*/
+
+# sources and headers
+!*.cu
+!*.cuh
+!*.c
+!*.cpp
+!*.h
+!*.hpp
+
+# project files
+!README.md
+!*.md
+!.gitignore
+!.clangd
+!Makefile
+!CMakeLists.txt
+
+# still ignore nvcc/profiler intermediates even if a rule above matches them
+*.o
+*.ptx
+*.cubin
+*.fatbin
+*.nsys-rep
+*.ncu-rep
+.claude/
